@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="sk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time Questionnaire</title>
+    <style>
+      @font-face {
+        font-family: "Neue Haas Grotesk Display Pro";
+        src: url("./neue-haas-grotesk-display-pro-cufonfonts/NeueHaasDisplayThin.ttf")
+          format("truetype");
+        font-weight: 200;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Neue Haas Grotesk Display Pro";
+        src: url("./neue-haas-grotesk-display-pro-cufonfonts/NeueHaasDisplayLight.ttf")
+          format("truetype");
+        font-weight: 300;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Neue Haas Grotesk Display Pro";
+        src: url("./neue-haas-grotesk-display-pro-cufonfonts/NeueHaasDisplayLightItalic.ttf")
+          format("truetype");
+        font-weight: 300;
+        font-style: italic;
+      }
+
+      @font-face {
+        font-family: "Neue Haas Grotesk Display Pro";
+        src: url("./neue-haas-grotesk-display-pro-cufonfonts/NeueHaasDisplayRoman.ttf")
+          format("truetype");
+        font-weight: 400;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Neue Haas Grotesk Display Pro";
+        src: url("./neue-haas-grotesk-display-pro-cufonfonts/NeueHaasDisplayRomanItalic.ttf")
+          format("truetype");
+        font-weight: 400;
+        font-style: italic;
+      }
+
+      :root {
+        --page-bg: #faf9f6;
+        --surface: rgba(255, 252, 247, 0.78);
+        --surface-strong: rgba(248, 244, 238, 0.92);
+        --surface-soft: rgba(241, 236, 228, 0.72);
+        --line: rgba(16, 16, 16, 0.1);
+        --line-strong: rgba(16, 16, 16, 0.22);
+        --text: #101010;
+        --muted: #6d675f;
+        --muted-soft: rgba(109, 103, 95, 0.7);
+        --sleep: #6f71d9;
+        --hygiene: #64bbb3;
+        --commute: #e2ad61;
+        --school: #d96f67;
+        --work: #8c7adb;
+        --free: #78c982;
+        --social: #d87aa9;
+        --shadow: 0 18px 40px rgba(24, 20, 14, 0.06);
+        --radius-xl: 34px;
+        --radius-lg: 24px;
+        --radius-md: 18px;
+        --font-sans: "Neue Haas Grotesk Display Pro", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
+      body {
+        font-family: var(--font-sans);
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(255, 255, 255, 0.92), transparent 34%),
+          radial-gradient(circle at 82% 18%, rgba(229, 221, 211, 0.46), transparent 24%),
+          linear-gradient(180deg, #fbfaf7 0%, #f5f1ea 100%);
+        opacity: 0;
+        transition: opacity 220ms ease;
+      }
+
+      body.is-loaded {
+        opacity: 1;
+      }
+
+      body.is-page-transitioning {
+        opacity: 0;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      .questionnaire-page {
+        position: relative;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      .questionnaire-page::before,
+      .questionnaire-page::after {
+        content: "";
+        position: fixed;
+        border-radius: 50%;
+        pointer-events: none;
+        filter: blur(6px);
+        opacity: 0.62;
+      }
+
+      .questionnaire-page::before {
+        top: 9vh;
+        right: -10vw;
+        width: 34vw;
+        height: 34vw;
+        min-width: 280px;
+        min-height: 280px;
+        background: radial-gradient(circle, rgba(218, 204, 190, 0.42), transparent 68%);
+      }
+
+      .questionnaire-page::after {
+        left: -8vw;
+        bottom: 6vh;
+        width: 28vw;
+        height: 28vw;
+        min-width: 220px;
+        min-height: 220px;
+        background: radial-gradient(circle, rgba(232, 225, 214, 0.56), transparent 70%);
+      }
+
+      .layout {
+        position: relative;
+        z-index: 1;
+        width: min(1400px, calc(100% - 48px));
+        margin: 0 auto;
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto auto minmax(0, 1fr);
+        padding: 8px 0 12px;
+      }
+
+      .topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 8px;
+      }
+
+      .topline__meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted-soft);
+        font-size: 0.88rem;
+        letter-spacing: -0.02em;
+      }
+
+      .topline__dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #0f0f0f;
+      }
+
+      .topline__back {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 44px;
+        padding: 0 18px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        background: rgba(251, 249, 245, 0.84);
+        color: var(--text);
+        letter-spacing: -0.02em;
+        cursor: pointer;
+        transition:
+          transform 180ms ease,
+          background-color 180ms ease,
+          border-color 180ms ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .topline__back:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 252, 247, 0.98);
+        border-color: rgba(16, 16, 16, 0.32);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.8fr);
+        gap: 22px;
+        align-items: end;
+        margin-bottom: 6px;
+      }
+
+      .hero__content {
+        max-width: 760px;
+      }
+
+      .hero__eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.84rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .hero__eyebrow::before {
+        content: "";
+        width: 42px;
+        height: 1px;
+        background: rgba(16, 16, 16, 0.18);
+      }
+
+      .hero__title {
+        max-width: 12ch;
+        font-size: clamp(2.8rem, 5vw, 4.8rem);
+        line-height: 0.92;
+        letter-spacing: -0.07em;
+        font-weight: 300;
+      }
+
+      .hero__title span {
+        font-style: italic;
+        font-weight: 300;
+      }
+
+      .hero__text {
+        max-width: 34ch;
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: clamp(0.94rem, 1.1vw, 1.08rem);
+        line-height: 1.08;
+        letter-spacing: -0.03em;
+      }
+
+      .hero__text em {
+        font-style: italic;
+      }
+
+      .hero__note {
+        justify-self: end;
+        max-width: 280px;
+        padding: 16px 18px 0;
+        border-top: 1px solid var(--line-strong);
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+      }
+
+      .hero__note strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text);
+        font-weight: 400;
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(380px, 0.92fr);
+        gap: 24px;
+        align-items: start;
+        min-height: 0;
+      }
+
+      .questions-shell,
+      .visual-shell {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(16, 16, 16, 0.08);
+        border-radius: var(--radius-xl);
+        background: linear-gradient(180deg, rgba(255, 253, 249, 0.88), rgba(248, 243, 236, 0.82));
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(16px);
+      }
+
+      .questions-shell::before,
+      .visual-shell::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 16%),
+          linear-gradient(90deg, rgba(16, 16, 16, 0.03) 0, rgba(16, 16, 16, 0.03) 1px, transparent 1px, transparent 100%);
+        background-size: auto, 100% 100%;
+        pointer-events: none;
+      }
+
+      .questions-shell {
+        display: flex;
+        flex-direction: column;
+        padding: 24px clamp(20px, 2.6vw, 34px) 20px;
+        min-height: 650px;
+        max-height: calc(100vh - 330px);
+      }
+
+      .section-intro {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .section-intro__label {
+        color: var(--muted-soft);
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .section-intro__title {
+        max-width: 14ch;
+        font-size: clamp(1.45rem, 1.9vw, 2rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        font-weight: 300;
+      }
+
+      .section-intro__desc {
+        max-width: 44ch;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+      }
+
+      .questions-stage {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        margin-top: 8px;
+        overflow: hidden;
+        padding-right: 0;
+        scrollbar-width: none;
+      }
+
+      .questions-track {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .question-page {
+        display: grid;
+        align-content: start;
+        gap: 0;
+        flex: 0 0 100%;
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
+      }
+
+      .cat {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 18px;
+        padding: 12px 0 13px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .cat:last-child {
+        border-bottom: none;
+      }
+
+      .question-page .cat:last-child {
+        border-bottom: none;
+      }
+
+      .cat-aside {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding-top: 2px;
+      }
+
+      .cat-index {
+        color: rgba(16, 16, 16, 0.34);
+        font-size: 0.86rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .cat-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .cat-dot {
+        flex: 0 0 auto;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.7);
+      }
+
+      .cat-name {
+        font-size: 0.92rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text);
+      }
+
+      .cat-body {
+        display: grid;
+        gap: 11px;
+      }
+
+      .q-main {
+        display: grid;
+        gap: 7px;
+      }
+
+      .q-label {
+        max-width: 34ch;
+        font-size: clamp(0.98rem, 1.2vw, 1.16rem);
+        line-height: 1;
+        letter-spacing: -0.04em;
+        font-weight: 300;
+      }
+
+      .slider-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .slider {
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-height: 36px;
+        padding: 0 2px;
+      }
+
+      .slider::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          rgba(16, 16, 16, 0.08),
+          rgba(16, 16, 16, 0.2),
+          rgba(16, 16, 16, 0.08)
+        );
+        transform: translateY(-50%);
+      }
+
+      .slider input[type="range"] {
+        width: 100%;
+        appearance: none;
+        background: transparent;
+        position: relative;
+        z-index: 1;
+      }
+
+      .slider input[type="range"]::-webkit-slider-runnable-track {
+        height: 1px;
+        background: transparent;
+      }
+
+      .slider input[type="range"]::-moz-range-track {
+        height: 1px;
+        background: transparent;
+      }
+
+      .slider input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        margin-top: -8px;
+        border: 4px solid rgba(255, 251, 246, 0.95);
+        border-radius: 50%;
+        background: var(--slider-color, #101010);
+        box-shadow:
+          0 0 0 1px rgba(16, 16, 16, 0.08),
+          0 8px 16px rgba(16, 16, 16, 0.12);
+        cursor: pointer;
+      }
+
+      .slider input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border: 4px solid rgba(255, 251, 246, 0.95);
+        border-radius: 50%;
+        background: var(--slider-color, #101010);
+        box-shadow:
+          0 0 0 1px rgba(16, 16, 16, 0.08),
+          0 8px 16px rgba(16, 16, 16, 0.12);
+        cursor: pointer;
+      }
+
+      .slider-val {
+        min-width: 64px;
+        text-align: right;
+        font-size: clamp(1rem, 1.15vw, 1.16rem);
+        line-height: 1;
+        letter-spacing: -0.05em;
+        font-weight: 300;
+      }
+
+      .q-sharp {
+        display: grid;
+        gap: 7px;
+      }
+
+      .q-sharp-label {
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        font-style: italic;
+      }
+
+      .opts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .opt {
+        padding: 8px 12px 9px;
+        border: 1px solid rgba(16, 16, 16, 0.12);
+        border-radius: 999px;
+        background: rgba(255, 253, 249, 0.75);
+        color: var(--text);
+        font-size: 0.78rem;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        cursor: pointer;
+        transition:
+          transform 180ms ease,
+          background-color 180ms ease,
+          color 180ms ease,
+          border-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      .opt:hover {
+        transform: translateY(-1px);
+        border-color: rgba(16, 16, 16, 0.24);
+        box-shadow: 0 8px 18px rgba(16, 16, 16, 0.06);
+      }
+
+      .opt.sel {
+        background: #121212;
+        color: #f8f4ee;
+        border-color: #121212;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-top: 10px;
+        margin-top: 8px;
+        border-top: 1px solid var(--line);
+      }
+
+      .pager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(16, 16, 16, 0.08);
+      }
+
+      .pager-copy {
+        color: var(--muted);
+        font-size: 0.84rem;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+      }
+
+      .pager-dots {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .pager-dot {
+        width: 10px;
+        height: 10px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(16, 16, 16, 0.14);
+        cursor: pointer;
+        transition:
+          transform 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      .pager-dot.is-active {
+        background: rgba(16, 16, 16, 0.92);
+        box-shadow: 0 0 0 6px rgba(16, 16, 16, 0.06);
+      }
+
+      .pager-dot:hover {
+        transform: scale(1.08);
+      }
+
+      .nav-copy {
+        max-width: 34ch;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .btn {
+        min-height: 42px;
+        padding: 0 16px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition:
+          transform 180ms ease,
+          background-color 180ms ease,
+          color 180ms ease,
+          border-color 180ms ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-back {
+        border: 1px solid rgba(16, 16, 16, 0.14);
+        background: rgba(255, 253, 249, 0.66);
+        color: var(--muted);
+      }
+
+      .btn-next {
+        border: 1px solid #121212;
+        background: #121212;
+        color: #f7f3ec;
+      }
+
+      .visual-shell {
+        align-self: start;
+        margin-top: -188px;
+        min-height: 0;
+      }
+
+      .visual-shell__inner {
+        display: grid;
+        grid-template-rows: auto auto minmax(220px, 1.25fr) auto auto auto;
+        align-content: start;
+        gap: 0;
+        min-height: 0;
+        padding: 16px 22px 18px;
+      }
+
+      .visual-shell::after {
+        content: "";
+        position: absolute;
+        inset: 18% -24% auto auto;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.75), transparent 72%);
+        pointer-events: none;
+      }
+
+      .visual-topline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+
+      .visual-topline__label {
+        color: var(--muted-soft);
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .visual-topline__title {
+        margin-top: 8px;
+        max-width: 10ch;
+        font-size: clamp(1.8rem, 2.8vw, 2.6rem);
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        font-weight: 300;
+      }
+
+      .go-back {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 78px;
+        min-height: 34px;
+        padding: 0 12px;
+        border: 1px solid rgba(16, 16, 16, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 252, 247, 0.72);
+        color: var(--text);
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition:
+          transform 180ms ease,
+          background-color 180ms ease,
+          border-color 180ms ease;
+      }
+
+      .go-back:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.92);
+        border-color: rgba(16, 16, 16, 0.24);
+      }
+
+      .visual-note {
+        max-width: 28ch;
+        margin-bottom: 12px;
+        color: var(--muted);
+        font-size: 0.98rem;
+        line-height: 1.12;
+        letter-spacing: -0.02em;
+      }
+
+      .bubbles-card,
+      .metrics-card,
+      .insight {
+        position: relative;
+        border: 1px solid rgba(16, 16, 16, 0.08);
+        border-radius: 26px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(247, 242, 235, 0.84)),
+          rgba(255, 252, 247, 0.78);
+      }
+
+      .bubbles-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 16px;
+        margin-bottom: 12px;
+      }
+
+      .bubbles-card__label,
+      .metrics-card__label {
+        color: var(--muted-soft);
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .bubbles {
+        position: relative;
+        flex: 1;
+        min-height: 220px;
+        height: auto;
+        max-height: 380px;
+        margin-top: 10px;
+        overflow: hidden;
+        border-radius: 22px;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.52), transparent 62%),
+          linear-gradient(180deg, rgba(255, 251, 246, 0.86), rgba(239, 232, 222, 0.75));
+      }
+
+      .bubble {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.84;
+        mix-blend-mode: multiply;
+        transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow:
+          inset 0 0 0 1px rgba(255, 255, 255, 0.26),
+          0 10px 24px rgba(44, 34, 20, 0.08);
+      }
+
+      .metrics-card {
+        padding: 16px;
+      }
+
+      .metrics-card + .metrics-card {
+        margin-top: 10px;
+      }
+
+      .stats {
+        margin-top: 12px;
+      }
+
+      .stat-line {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 10px;
+      }
+
+      .stat-line__value {
+        font-size: 2rem;
+        line-height: 0.9;
+        letter-spacing: -0.07em;
+        font-weight: 300;
+      }
+
+      .stat-line__caption {
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        text-align: right;
+      }
+
+      .day-bar {
+        display: flex;
+        height: 18px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(16, 16, 16, 0.06);
+      }
+
+      .day-segment {
+        height: 100%;
+        transition: width 0.3s ease;
+      }
+
+      .day-info {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        letter-spacing: -0.02em;
+      }
+
+      .day-free span {
+        color: var(--text);
+      }
+
+      .compare {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .compare-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        font-size: 0.96rem;
+        line-height: 1.06;
+        letter-spacing: -0.02em;
+      }
+
+      .compare-row span:first-child {
+        color: var(--muted);
+      }
+
+      .compare-row span:last-child {
+        color: var(--text);
+      }
+
+      .insight {
+        margin-top: 10px;
+        padding: 16px;
+        color: #5373b5;
+        background:
+          linear-gradient(180deg, rgba(224, 234, 251, 0.95), rgba(211, 225, 248, 0.9)),
+          rgba(224, 234, 251, 0.92);
+        border-color: rgba(83, 115, 181, 0.12);
+        font-size: 0.96rem;
+        line-height: 1.14;
+        letter-spacing: -0.02em;
+      }
+
+      @media (max-height: 860px) and (min-width: 901px) {
+        .questions-shell {
+          min-height: 620px;
+          max-height: calc(100vh - 340px);
+        }
+
+        .visual-shell {
+          margin-top: -204px;
+        }
+
+        .visual-shell__inner {
+          padding: 14px 18px 16px;
+        }
+
+        .visual-topline {
+          margin-bottom: 14px;
+        }
+
+        .visual-topline__title {
+          font-size: clamp(1.55rem, 2.2vw, 2rem);
+        }
+
+        .visual-note {
+          margin-bottom: 14px;
+          font-size: 0.88rem;
+        }
+
+        .bubbles-card {
+          padding: 14px;
+          margin-bottom: 12px;
+        }
+
+        .bubbles {
+          min-height: 180px;
+          max-height: 280px;
+          margin-top: 10px;
+        }
+
+        .metrics-card {
+          padding: 14px;
+        }
+
+        .metrics-card + .metrics-card {
+          margin-top: 10px;
+        }
+
+        .stats {
+          margin-top: 8px;
+        }
+
+        .stat-line {
+          margin-bottom: 8px;
+        }
+
+        .stat-line__value {
+          font-size: 1.65rem;
+        }
+
+        .stat-line__caption,
+        .day-info,
+        .compare-row,
+        .insight {
+          font-size: 0.84rem;
+        }
+
+        .day-bar {
+          height: 14px;
+        }
+
+        .compare {
+          gap: 8px;
+          margin-top: 10px;
+        }
+
+        .insight {
+          margin-top: 10px;
+          padding: 14px;
+          line-height: 1.08;
+        }
+      }
+
+      @media (max-width: 900px) {
+        body {
+          overflow: auto;
+        }
+
+        .hero,
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .layout {
+          min-height: auto;
+          display: block;
+          padding: 26px 0 34px;
+        }
+
+        .topline {
+          margin-bottom: 28px;
+        }
+
+        .hero__note {
+          justify-self: start;
+          padding: 20px 0 0;
+        }
+
+        .hero {
+          gap: 28px;
+          margin-bottom: 28px;
+        }
+
+        .hero__title {
+          font-size: clamp(3.4rem, 8vw, 7rem);
+        }
+
+        .hero__text {
+          margin-top: 18px;
+          font-size: clamp(1rem, 1.45vw, 1.28rem);
+        }
+
+        .visual-shell {
+          margin-top: 0;
+          min-height: auto;
+          height: auto;
+        }
+
+        .visual-shell__inner {
+          display: block;
+          height: auto;
+          min-height: auto;
+          padding: 28px 24px 24px;
+        }
+
+        .insight {
+          margin-top: 14px;
+        }
+
+        .questions-shell {
+          height: clamp(620px, calc(100vh - 250px), 760px);
+        }
+
+        .bubbles {
+          height: 320px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .layout {
+          height: auto;
+          width: min(100% - 24px, 1400px);
+          padding-top: 18px;
+        }
+
+        .topline {
+          margin-bottom: 22px;
+        }
+
+        .hero {
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+
+        .hero__title {
+          max-width: none;
+          font-size: clamp(2.8rem, 16vw, 4.4rem);
+        }
+
+        .questions-shell,
+        .visual-shell {
+          border-radius: 28px;
+        }
+
+        .questions-shell {
+          height: auto;
+          padding: 24px 18px 20px;
+        }
+
+        .section-intro,
+        .cat {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .questions-stage {
+          overflow: visible;
+          padding-right: 0;
+        }
+
+        .questions-track {
+          display: block;
+          height: auto;
+          transform: none !important;
+        }
+
+        .question-page {
+          height: auto;
+          min-height: 0;
+        }
+
+        .question-page + .question-page {
+          margin-top: 4px;
+        }
+
+        .question-page + .question-page {
+          margin-top: 4px;
+        }
+
+        .cat-aside {
+          gap: 10px;
+          padding-top: 0;
+        }
+
+        .slider-row,
+        .nav,
+        .pager {
+          grid-template-columns: 1fr;
+          display: grid;
+        }
+
+        .slider-val {
+          min-width: 0;
+          text-align: left;
+        }
+
+        .nav-actions {
+          width: 100%;
+          justify-content: space-between;
+        }
+
+        .btn {
+          flex: 1;
+        }
+
+        .visual-shell {
+          padding: 22px 18px 18px;
+        }
+
+        .visual-topline {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .go-back {
+          order: -1;
+        }
+
+        .bubbles {
+          height: 280px;
+        }
+
+        .day-info,
+        .compare-row {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="questionnaire-page">
+      <h1 class="sr-only">Time dotazník</h1>
+
+      <div class="layout">
+        <header class="topline" aria-label="Navigácia dotazníka">
+          <div class="topline__meta">
+            <span class="topline__dot" aria-hidden="true"></span>
+            <span>TIME / INPUT SESSION / DAILY RHYTHM</span>
+          </div>
+          <button class="topline__back" type="button" data-go-back>
+            <span aria-hidden="true">←</span>
+            <span>GO BACK</span>
+          </button>
+        </header>
+
+        <section class="hero" aria-label="Úvod dotazníka">
+          <div class="hero__content">
+            <div class="hero__eyebrow">Add your data</div>
+            <div class="hero__title">
+              Kam sa tvoj deň
+              <span>naozaj</span>
+              rozpadá?
+            </div>
+            <p class="hero__text">
+              Nie ako produktivita. Skôr ako rytmus, tlak, ticho a priestor medzi tým.
+              Prejdi dotazník a sleduj, ako sa tvoja denná skladba mení vpravo v reálnom čase.
+            </p>
+          </div>
+        </section>
+
+        <div class="main-grid">
+          <section class="questions-shell" aria-labelledby="questionnaire-title">
+            <div class="section-intro">
+              <div class="section-intro__label">Questionnaire</div>
+              <div>
+                <h2 class="section-intro__title" id="questionnaire-title">
+                  Sedem vrstiev jedného dňa.
+                </h2>
+                <p class="section-intro__desc">
+                  Základná logika zostáva jednoduchá: nastav čas, vyber tón odpovede a nechaj
+                  vizualizáciu skladať tvoj deň vedľa teba.
+                </p>
+              </div>
+            </div>
+
+            <div class="questions-stage" data-questions-stage>
+              <div class="questions-track" data-questions-track>
+                <div class="question-page" data-question-page>
+                  <article class="cat">
+                <div class="cat-aside">
+                  <div class="cat-index">01</div>
+                  <div class="cat-head">
+                    <div class="cat-dot" style="background: var(--sleep)"></div>
+                    <span class="cat-name">Spánok</span>
+                  </div>
+                </div>
+
+                <div class="cat-body">
+                  <div class="q-main">
+                    <div class="q-label">Koľko hodín spíš?</div>
+                    <div class="slider-row">
+                      <label class="slider" aria-label="Počet hodín spánku">
+                        <input
+                          type="range"
+                          min="4"
+                          max="12"
+                          step="0.5"
+                          value="7"
+                          id="sleep"
+                          style="--slider-color: var(--sleep)"
+                        />
+                      </label>
+                      <span class="slider-val" id="v-sleep">7h</span>
+                    </div>
+                  </div>
+
+                  <div class="q-sharp">
+                    <div class="q-sharp-label">Zaspávaš s telefónom v ruke?</div>
+                    <div class="opts">
+                      <button class="opt" type="button">Takmer vždy</button>
+                      <button class="opt" type="button">Často</button>
+                      <button class="opt" type="button">Občas</button>
+                      <button class="opt" type="button">Nikdy</button>
+                    </div>
+                  </div>
+                </div>
+                  </article>
+
+                  <article class="cat">
+                <div class="cat-aside">
+                  <div class="cat-index">02</div>
+                  <div class="cat-head">
+                    <div class="cat-dot" style="background: var(--hygiene)"></div>
+                    <span class="cat-name">Ranná rutina</span>
+                  </div>
+                </div>
+
+                <div class="cat-body">
+                  <div class="q-main">
+                    <div class="q-label">Koľko času ti zaberie ranná rutina?</div>
+                    <div class="slider-row">
+                      <label class="slider" aria-label="Dĺžka rannej rutiny">
+                        <input
+                          type="range"
+                          min="10"
+                          max="120"
+                          step="5"
+                          value="45"
+                          id="hygiene"
+                          style="--slider-color: var(--hygiene)"
+                        />
+                      </label>
+                      <span class="slider-val" id="v-hygiene">45min</span>
+                    </div>
+                  </div>
+
+                  <div class="q-sharp">
+                    <div class="q-sharp-label">Máš rána, kedy sa na seba ani nepozrieš?</div>
+                    <div class="opts">
+                      <button class="opt" type="button">Často</button>
+                      <button class="opt" type="button">Občas</button>
+                      <button class="opt" type="button">Nikdy</button>
+                    </div>
+                  </div>
+                </div>
+                  </article>
+                </div>
+
+                <div class="question-page" data-question-page>
+                  <article class="cat">
+                <div class="cat-aside">
+                  <div class="cat-index">03</div>
+                  <div class="cat-head">
+                    <div class="cat-dot" style="background: var(--commute)"></div>
+                    <span class="cat-name">Cestovanie</span>
+                  </div>
+                </div>
+
+                <div class="cat-body">
+                  <div class="q-main">
+                    <div class="q-label">Cesta do školy alebo práce a späť denne.</div>
+                    <div class="slider-row">
+                      <label class="slider" aria-label="Čas cestovania">
+                        <input
+                          type="range"
+                          min="0"
+                          max="180"
+                          step="10"
+                          value="50"
+                          id="commute"
+                          style="--slider-color: var(--commute)"
+                        />
+                      </label>
+                      <span class="slider-val" id="v-commute">50min</span>
+                    </div>
+                  </div>
+
+                  <div class="q-sharp">
+                    <div class="q-sharp-label">Vnímaš cestu ako stratený čas?</div>
+                    <div class="opts">
+                      <button class="opt" type="button">Áno</button>
+                      <button class="opt" type="button">Čiastočne</button>
+                      <button class="opt" type="button">Nie, je to môj čas</button>
+                    </div>
+                  </div>
+                </div>
+                  </article>
+
+                  <article class="cat">
+                <div class="cat-aside">
+                  <div class="cat-index">04</div>
+                  <div class="cat-head">
+                    <div class="cat-dot" style="background: var(--school)"></div>
+                    <span class="cat-name">Škola</span>
+                  </div>
+                </div>
+
+                <div class="cat-body">
+                  <div class="q-main">
+                    <div class="q-label">Koľko hodín denne venuješ škole alebo štúdiu?</div>
+                    <div class="slider-row">
+                      <label class="slider" aria-label="Čas školy a štúdia">
+                        <input
+                          type="range"
+                          min="0"
+                          max="14"
+                          step="0.5"
+                          value="5"
+                          id="school"
+                          style="--slider-color: var(--school)"
+                        />
+                      </label>
+                      <span class="slider-val" id="v-school">5h</span>
+                    </div>
+                  </div>
+
+                  <div class="q-sharp">
+                    <div class="q-sharp-label">Z toho si reálne sústredený alebo sústredená...</div>
+                    <div class="opts">
+                      <button class="opt" type="button">Väčšinu</button>
+                      <button class="opt" type="button">Polovicu</button>
+                      <button class="opt" type="button">Minimum</button>
+                    </div>
+                  </div>
+                </div>
+                  </article>
+                </div>
+
+                <div class="question-page" data-question-page>
+                  <article class="cat">
+                <div class="cat-aside">
+                  <div class="cat-index">05</div>
+                  <div class="cat-head">
+                    <div class="cat-dot" style="background: var(--work)"></div>
+                    <span class="cat-name">Práca</span>
+                  </div>
+                </div>
+
+                <div class="cat-body">
+                  <div class="q-main">
+                    <div class="q-label">Koľko hodín denne pracuješ?</div>
+                    <div class="slider-row">
+                      <label class="slider" aria-label="Čas práce">
+                        <input
+                          type="range"
+                          min="0"
+                          max="12"
+                          step="0.5"
+                          value="3"
+                          id="work"
+                          style="--slider-color: var(--work)"
+                        />
+                      </label>
+                      <span class="slider-val" id="v-work">3h</span>
+                    </div>
+                  </div>
+
+                  <div class="q-sharp">
+                    <div class="q-sharp-label">
+                      Pracuješ aby si žil alebo žiješ aby si pracoval?
+                    </div>
+                    <div class="opts">
+                      <button class="opt" type="button">Pracujem aby som žil</button>
+                      <button class="opt" type="button">Niekde medzi</button>
+                      <button class="opt" type="button">Žijem aby som pracoval</button>
+                    </div>
+                  </div>
+                </div>
+                  </article>
+
+                  <article class="cat">
+                <div class="cat-aside">
+                  <div class="cat-index">06</div>
+                  <div class="cat-head">
+                    <div class="cat-dot" style="background: var(--free)"></div>
+                    <span class="cat-name">Voľný čas</span>
+                  </div>
+                </div>
+
+                <div class="cat-body">
+                  <div class="q-main">
+                    <div class="q-label">Koľko času máš čisto pre seba?</div>
+                    <div class="slider-row">
+                      <label class="slider" aria-label="Voľný čas pre seba">
+                        <input
+                          type="range"
+                          min="0"
+                          max="8"
+                          step="0.5"
+                          value="2"
+                          id="free"
+                          style="--slider-color: var(--free)"
+                        />
+                      </label>
+                      <span class="slider-val" id="v-free">2h</span>
+                    </div>
+                  </div>
+
+                  <div class="q-sharp">
+                    <div class="q-sharp-label">Kedy si naposledy robil niečo bez telefónu?</div>
+                    <div class="opts">
+                      <button class="opt" type="button">Dnes</button>
+                      <button class="opt" type="button">Tento týždeň</button>
+                      <button class="opt" type="button">Nepamätám</button>
+                    </div>
+                  </div>
+                </div>
+                  </article>
+                </div>
+
+                <div class="question-page" data-question-page>
+                  <article class="cat">
+                <div class="cat-aside">
+                  <div class="cat-index">07</div>
+                  <div class="cat-head">
+                    <div class="cat-dot" style="background: var(--social)"></div>
+                    <span class="cat-name">Socializácia</span>
+                  </div>
+                </div>
+
+                <div class="cat-body">
+                  <div class="q-main">
+                    <div class="q-label">Čas s ľuďmi, na ktorých ti záleží.</div>
+                    <div class="slider-row">
+                      <label class="slider" aria-label="Čas socializácie">
+                        <input
+                          type="range"
+                          min="0"
+                          max="8"
+                          step="0.5"
+                          value="2"
+                          id="social"
+                          style="--slider-color: var(--social)"
+                        />
+                      </label>
+                      <span class="slider-val" id="v-social">2h</span>
+                    </div>
+                  </div>
+
+                  <div class="q-sharp">
+                    <div class="q-sharp-label">Tráviš čas aj s ľuďmi, s ktorými nechceš?</div>
+                    <div class="opts">
+                      <button class="opt" type="button">Často</button>
+                      <button class="opt" type="button">Občas</button>
+                      <button class="opt" type="button">Nikdy</button>
+                    </div>
+                  </div>
+                </div>
+                  </article>
+                </div>
+              </div>
+            </div>
+
+            <div class="pager" aria-label="Navigácia otázok">
+              <div class="pager-copy">Scrolluj vľavo alebo klikni na bod pre ďalšiu vrstvu.</div>
+              <div class="pager-dots" data-pager-dots>
+                <button class="pager-dot is-active" type="button" aria-label="Strana 1" data-page-dot="0"></button>
+                <button class="pager-dot" type="button" aria-label="Strana 2" data-page-dot="1"></button>
+                <button class="pager-dot" type="button" aria-label="Strana 3" data-page-dot="2"></button>
+                <button class="pager-dot" type="button" aria-label="Strana 4" data-page-dot="3"></button>
+              </div>
+            </div>
+
+            <div class="nav">
+              <p class="nav-copy">
+                Keď budeš pripravený, môžeme z tohto ďalej vyrobiť výsledkový pohľad s rovnakou
+                mierou ticha, priestoru a napätia.
+              </p>
+              <div class="nav-actions">
+                <button class="btn btn-back" type="button" data-nav-back>Späť</button>
+                <button class="btn btn-next" type="button">Zobraziť výsledky</button>
+              </div>
+            </div>
+          </section>
+
+          <aside class="visual-shell" aria-labelledby="visualization-title">
+            <div class="visual-shell__inner">
+              <div class="visual-topline">
+                <div>
+                  <div class="visual-topline__label">Live visualization</div>
+                  <h2 class="visual-topline__title" id="visualization-title">
+                    Tvoj deň sa skladá tu.
+                  </h2>
+                </div>
+                <button class="go-back" type="button" data-go-back>GO BACK</button>
+              </div>
+
+              <p class="visual-note">
+                Každá bublina reprezentuje jednu časť dňa. Čím viac priestoru jej dáš, tým viac
+                narastie a zmení celkovú kompozíciu.
+              </p>
+
+              <section class="bubbles-card" aria-label="Vizualizácia času">
+                <div class="bubbles-card__label">Daily composition</div>
+                <div class="bubbles">
+                  <div class="bubble" id="b-sleep" style="background: var(--sleep)"></div>
+                  <div class="bubble" id="b-hygiene" style="background: var(--hygiene)"></div>
+                  <div class="bubble" id="b-commute" style="background: var(--commute)"></div>
+                  <div class="bubble" id="b-school" style="background: var(--school)"></div>
+                  <div class="bubble" id="b-work" style="background: var(--work)"></div>
+                  <div class="bubble" id="b-free" style="background: var(--free)"></div>
+                  <div class="bubble" id="b-social" style="background: var(--social)"></div>
+                </div>
+              </section>
+
+              <section class="metrics-card" aria-label="Štatistika dňa">
+                <div class="metrics-card__label">Your day</div>
+                <div class="stats">
+                  <div class="stat-line">
+                    <div class="stat-line__value" id="day-free">3.4h</div>
+                    <div class="stat-line__caption">
+                      priestoru ostáva
+                      <br />
+                      z 24 hodín
+                    </div>
+                  </div>
+
+                  <div class="day-bar" id="day-bar"></div>
+
+                  <div class="day-info">
+                    <span class="day-used" id="day-used">20.6h / 24h</span>
+                    <span class="day-free">Zostáva <span id="day-free-inline">3.4h</span></span>
+                  </div>
+                </div>
+              </section>
+
+              <section class="metrics-card" aria-label="Porovnanie s priemerom">
+                <div class="metrics-card__label">Ty vs. priemer</div>
+                <div class="compare">
+                  <div class="compare-row">
+                    <span>Tvoj voľný čas</span>
+                    <span id="cmp-you">3.4h</span>
+                  </div>
+                  <div class="compare-row">
+                    <span>Priemer ostatných</span>
+                    <span>2.4h</span>
+                  </div>
+                </div>
+              </section>
+
+              <div class="insight" id="insight">
+                Máš viac voľného času ako 68% respondentov.
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const colors = {
+        sleep: "#6f71d9",
+        hygiene: "#64bbb3",
+        commute: "#e2ad61",
+        school: "#d96f67",
+        work: "#8c7adb",
+        free: "#78c982",
+        social: "#d87aa9",
+      };
+
+      const positions = [
+        { x: 54, y: 18 },
+        { x: 76, y: 40 },
+        { x: 24, y: 56 },
+        { x: 59, y: 68 },
+        { x: 84, y: 24 },
+        { x: 37, y: 30 },
+        { x: 68, y: 82 },
+      ];
+
+      const avgFree = 2.4;
+      const ids = ["sleep", "hygiene", "commute", "school", "work", "free", "social"];
+      const questionsStage = document.querySelector("[data-questions-stage]");
+      const questionsTrack = document.querySelector("[data-questions-track]");
+      const questionPages = Array.from(document.querySelectorAll("[data-question-page]"));
+      const pageDots = Array.from(document.querySelectorAll("[data-page-dot]"));
+      const desktopQuestionsQuery = window.matchMedia("(min-width: 721px)");
+      let activePageIndex = 0;
+      let wheelLock = false;
+
+      function selectOption(button) {
+        button.parentElement.querySelectorAll(".opt").forEach((option) => option.classList.remove("sel"));
+        button.classList.add("sel");
+      }
+
+      function syncQuestionPager() {
+        pageDots.forEach((dot, index) => {
+          dot.classList.toggle("is-active", index === activePageIndex);
+          dot.setAttribute("aria-current", index === activePageIndex ? "true" : "false");
+        });
+
+        if (!desktopQuestionsQuery.matches || !questionsTrack) {
+          questionsTrack.style.transform = "";
+          return;
+        }
+
+        questionsTrack.style.transform = `translateX(-${activePageIndex * 100}%)`;
+      }
+
+      function setActivePage(index) {
+        const nextIndex = Math.max(0, Math.min(questionPages.length - 1, index));
+        if (nextIndex === activePageIndex) return;
+        activePageIndex = nextIndex;
+        syncQuestionPager();
+      }
+
+      function handleQuestionStageWheel(event) {
+        if (!desktopQuestionsQuery.matches || !questionsStage || questionPages.length < 2) return;
+        if (!questionsStage.contains(event.target)) return;
+        if (wheelLock) {
+          event.preventDefault();
+          return;
+        }
+
+        const direction = Math.sign(event.deltaY);
+        const nextIndex = activePageIndex + direction;
+
+        if (direction === 0 || nextIndex < 0 || nextIndex >= questionPages.length) {
+          return;
+        }
+
+        event.preventDefault();
+        wheelLock = true;
+        setActivePage(nextIndex);
+        window.setTimeout(() => {
+          wheelLock = false;
+        }, 420);
+      }
+
+      function goBack() {
+        document.body.classList.add("is-page-transitioning");
+        const fallback = "./index.html";
+
+        if (window.history.length > 1) {
+          window.setTimeout(() => {
+            window.history.back();
+          }, 220);
+          return;
+        }
+
+        window.setTimeout(() => {
+          window.location.href = fallback;
+        }, 220);
+      }
+
+      function update() {
+        const sleep = parseFloat(document.getElementById("sleep").value);
+        const hygiene = parseFloat(document.getElementById("hygiene").value) / 60;
+        const commute = parseFloat(document.getElementById("commute").value) / 60;
+        const school = parseFloat(document.getElementById("school").value);
+        const work = parseFloat(document.getElementById("work").value);
+        const free = parseFloat(document.getElementById("free").value);
+        const social = parseFloat(document.getElementById("social").value);
+
+        document.getElementById("v-sleep").textContent = `${sleep}h`;
+        document.getElementById("v-hygiene").textContent = `${Math.round(hygiene * 60)}min`;
+        document.getElementById("v-commute").textContent = `${Math.round(commute * 60)}min`;
+        document.getElementById("v-school").textContent = `${school}h`;
+        document.getElementById("v-work").textContent = `${work}h`;
+        document.getElementById("v-free").textContent = `${free}h`;
+        document.getElementById("v-social").textContent = `${social}h`;
+
+        const values = [sleep, hygiene, commute, school, work, free, social];
+        const total = values.reduce((sum, value) => sum + value, 0);
+        const remaining = Math.max(0, 24 - total);
+
+        values.forEach((value, index) => {
+          const key = ids[index];
+          const bubble = document.getElementById(`b-${key}`);
+          const size = Math.max(26, Math.min(134, (value / 12) * 108 + 24));
+          bubble.style.width = `${size}px`;
+          bubble.style.height = `${size}px`;
+          bubble.style.left = `calc(${positions[index].x}% - ${size / 2}px)`;
+          bubble.style.top = `calc(${positions[index].y}% - ${size / 2}px)`;
+        });
+
+        let barHtml = "";
+        values.forEach((value, index) => {
+          const pct = (value / 24) * 100;
+          barHtml += `<div class="day-segment" style="width:${pct.toFixed(1)}%;background:${colors[ids[index]]}"></div>`;
+        });
+
+        if (remaining > 0) {
+          barHtml += `<div class="day-segment" style="width:${((remaining / 24) * 100).toFixed(1)}%;background:rgba(16,16,16,0.08)"></div>`;
+        }
+
+        document.getElementById("day-bar").innerHTML = barHtml;
+        document.getElementById("day-used").textContent = `${total.toFixed(1)}h / 24h`;
+        document.getElementById("day-free").textContent = `${remaining.toFixed(1)}h`;
+        document.getElementById("day-free-inline").textContent = `${remaining.toFixed(1)}h`;
+        document.getElementById("cmp-you").textContent = `${remaining.toFixed(1)}h`;
+
+        let insight = "";
+        if (remaining > avgFree) {
+          const pct = Math.round(50 + (remaining - avgFree) * 15);
+          insight = `Máš viac voľného času ako ${Math.min(95, pct)}% respondentov.`;
+        } else if (remaining < avgFree) {
+          const pct = Math.round(50 - (avgFree - remaining) * 20);
+          insight = `Máš menej voľného času ako ${100 - Math.max(5, pct)}% respondentov.`;
+        } else {
+          insight = "Si presne na priemere — 2.4h voľného času denne.";
+        }
+
+        if (total > 24) {
+          insight =
+            "Tvoj deň má viac ako 24 hodín. Niektoré aktivity sa pravdepodobne prekrývajú.";
+        }
+
+        document.getElementById("insight").textContent = insight;
+      }
+
+      document.querySelectorAll('input[type="range"]').forEach((input) => {
+        input.addEventListener("input", update);
+      });
+
+      document.querySelectorAll(".opt").forEach((button) => {
+        button.addEventListener("click", () => selectOption(button));
+      });
+
+      pageDots.forEach((dot) => {
+        dot.addEventListener("click", () => {
+          setActivePage(Number(dot.dataset.pageDot));
+        });
+      });
+
+      document.querySelectorAll("[data-go-back]").forEach((button) => {
+        button.addEventListener("click", goBack);
+      });
+
+      document.querySelector("[data-nav-back]").addEventListener("click", goBack);
+      window.addEventListener("wheel", handleQuestionStageWheel, { passive: false });
+      window.addEventListener("resize", syncQuestionPager);
+
+      if (typeof desktopQuestionsQuery.addEventListener === "function") {
+        desktopQuestionsQuery.addEventListener("change", syncQuestionPager);
+      } else if (typeof desktopQuestionsQuery.addListener === "function") {
+        desktopQuestionsQuery.addListener(syncQuestionPager);
+      }
+
+      window.requestAnimationFrame(() => {
+        document.body.classList.add("is-loaded");
+      });
+
+      update();
+      syncQuestionPager();
+    </script>
+  </body>
+</html>

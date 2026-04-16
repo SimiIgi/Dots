@@ -3,8 +3,10 @@ const topDot = document.querySelector("[data-top-dot]");
 const backButton = document.querySelector("[data-back-button]");
 const welcomeCopy = document.querySelector("[data-welcome-copy]");
 const returnCopy = document.querySelector("[data-return-copy]");
+const returnCta = document.querySelector("[data-return-cta]");
 const welcomeNote = document.querySelector("[data-welcome-note]");
 const dotHint = document.querySelector("[data-dot-hint]");
+const scrollIndicator = document.querySelector("[data-scroll-indicator]");
 const dotStat = document.querySelector("[data-dot-stat]");
 const dotStatValue = document.querySelector("[data-dot-stat-value]");
 const dotStatLabel = document.querySelector("[data-dot-stat-label]");
@@ -154,6 +156,8 @@ function createBackgroundDots() {
     pressScale: preset.pressScale,
     statValue: preset.statValue,
     statLabel: preset.statLabel,
+    lockedX: null,
+    lockedY: null,
   }));
 
   if (state.isDotActivated) {
@@ -258,14 +262,24 @@ function drawBackgroundDots(now) {
       const driftOffsetY =
         Math.cos(driftTime * dot.driftSpeedY + dot.phaseY) * dot.driftY * driftWeight;
 
-      dot.x = dot.targetX + driftOffsetX;
-      dot.y =
+      const nextX = dot.targetX + driftOffsetX;
+      const nextY =
         -dot.radius * 3 +
         (dot.targetY + dot.radius * 3) * fallProgress +
         driftOffsetY;
+
+      if (state.pressedDotIndex !== null && state.dots[state.pressedDotIndex] === dot) {
+        dot.x = dot.lockedX ?? nextX;
+        dot.y = dot.lockedY ?? nextY;
+      } else {
+        dot.x = nextX;
+        dot.y = nextY;
+      }
     }
 
-    const dotsOpacity = Math.min(1, Math.max(0, (state.scrollProgress - 0.7) / 0.18));
+    const dotsOpacity = state.isReturnMode
+      ? 0.68
+      : Math.min(1, Math.max(0, (state.scrollProgress - 0.7) / 0.18));
 
     backgroundDotsContext.beginPath();
     backgroundDotsContext.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
@@ -286,16 +300,10 @@ function syncCursor() {
 }
 
 function scheduleIntroSettle() {
-  if (state.introSettleTimeoutId !== null) {
-    window.clearTimeout(state.introSettleTimeoutId);
-  }
-
-  state.introSettleTimeoutId = window.setTimeout(() => {
-    topDot.classList.add("is-settled");
-    state.isSettled = true;
-    state.introSettleTimeoutId = null;
-    syncDotScrollState();
-  }, 500);
+  topDot.classList.add("is-settled");
+  state.isSettled = true;
+  state.introSettleTimeoutId = null;
+  syncDotScrollState();
 }
 
 function syncDotScrollState() {
@@ -318,6 +326,8 @@ function syncDotScrollState() {
   const noteShift = 92 - noteRevealProgress * 18;
   const isNearBottom = state.scrollProgress >= 0.992;
   const dotsAreFloating = getDotsFloatingProgress(now) > 0;
+  const showScrollIndicator =
+    !state.isDotActivated && !state.isReturnMode && state.scrollProgress < 0.04;
 
   if (isNearBottom && dotsAreFloating && state.hintDelayStartTime === 0) {
     state.hintDelayStartTime = now;
@@ -345,6 +355,7 @@ function syncDotScrollState() {
   dotHint.style.setProperty("--hint-opacity", hintOpacity.toFixed(3));
   dotHint.style.setProperty("--hint-shift", `${hintShift.toFixed(1)}px`);
   dotHint.textContent = state.isDotActivated ? ACTIVE_DOT_MESSAGE : "Click the dot in time";
+  scrollIndicator.classList.toggle("is-hidden", !showScrollIndicator);
 
   if (!state.isReturnMode && !state.dotsStarted && state.scrollProgress >= DOTS_START_THRESHOLD) {
     state.dotsStarted = true;
@@ -365,7 +376,9 @@ function syncDotScrollState() {
 
   topDot.classList.toggle(
     "is-pulsing",
-    state.isReturnMode || (state.dotsStarted && dotsAreFloating && hintOpacity > 0.12 && !state.isDotActivated),
+    state.isReturnMode ||
+      (!state.isDotActivated && state.scrollProgress < 0.04) ||
+      (state.dotsStarted && dotsAreFloating && hintOpacity > 0.12 && !state.isDotActivated),
   );
   topDot.classList.toggle("is-disabled", !state.canActivateTopDot && !state.isReturnMode);
   topDot.classList.toggle("is-activated", state.isDotActivated);
@@ -373,6 +386,7 @@ function syncDotScrollState() {
   welcomeCopy.classList.toggle("is-muted", state.isDotActivated);
   welcomeCopy.classList.toggle("is-return-copy", state.isReturnMode);
   returnCopy.classList.toggle("is-visible", state.isReturnMode);
+  returnCta.classList.toggle("is-visible", state.isReturnMode);
   welcomeNote.classList.toggle("is-hidden", state.isDotActivated);
   dotHint.classList.toggle("is-active-message", state.isDotActivated);
   backButton.classList.toggle("is-visible", state.isDotActivated || state.isReturnMode);
@@ -413,7 +427,7 @@ function activateDot() {
     return;
   }
 
-  state.dotsPaused = true;
+  state.dotsPaused = false;
   state.isDotActivated = true;
   state.hintDelayStartTime = performance.now();
   state.selectedDotIndex = null;
@@ -422,12 +436,6 @@ function activateDot() {
 }
 
 function restartIntro() {
-  if (state.introSettleTimeoutId !== null) {
-    window.clearTimeout(state.introSettleTimeoutId);
-    state.introSettleTimeoutId = null;
-  }
-
-  topDot.classList.remove("is-settled");
   state.isSettled = false;
   state.dotsStarted = false;
   state.dotsStartTime = 0;
@@ -448,8 +456,10 @@ function restartIntro() {
 }
 
 function returnToStart() {
-  state.dotsStarted = false;
-  state.dotsStartTime = 0;
+  if (!state.dotsStarted) {
+    state.dotsStarted = true;
+    state.dotsStartTime = performance.now();
+  }
   state.hintDelayStartTime = 0;
   state.dotsPaused = false;
   state.isDotActivated = false;
@@ -474,6 +484,13 @@ function handleTopbarButtonClick() {
   returnToStart();
 }
 
+function handleReturnCtaClick() {
+  document.body.classList.add("is-page-transitioning");
+  window.setTimeout(() => {
+    window.location.href = "./questionnaire.html";
+  }, 220);
+}
+
 function handleInteractiveDotPointerDown(event) {
   if (!state.isDotActivated) return;
 
@@ -483,6 +500,8 @@ function handleInteractiveDotPointerDown(event) {
   const index = Number(button.dataset.dotIndex);
   state.pressedDotIndex = index;
   state.selectedDotIndex = index;
+  state.dots[index].lockedX = state.dots[index].x;
+  state.dots[index].lockedY = state.dots[index].y;
   button.setPointerCapture(event.pointerId);
   updateStatDisplay();
   syncInteractiveDots();
@@ -490,6 +509,8 @@ function handleInteractiveDotPointerDown(event) {
 
 function clearPressedDot() {
   if (state.pressedDotIndex === null) return;
+  state.dots[state.pressedDotIndex].lockedX = null;
+  state.dots[state.pressedDotIndex].lockedY = null;
   state.pressedDotIndex = null;
   state.selectedDotIndex = null;
   syncDotScrollState();
@@ -518,6 +539,7 @@ window.addEventListener("pointerup", clearPressedDot);
 window.addEventListener("pointercancel", clearPressedDot);
 topDot.addEventListener("click", activateDot);
 backButton.addEventListener("click", handleTopbarButtonClick);
+returnCta.addEventListener("click", handleReturnCtaClick);
 interactiveDotsLayer.addEventListener("pointerdown", handleInteractiveDotPointerDown);
 window.addEventListener("resize", () => {
   resizeBackgroundDotsCanvas();
