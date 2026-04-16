@@ -8,15 +8,25 @@
   </head>
   <body>
     <main class="landing-page">
+      <canvas class="background-dots" aria-hidden="true" data-background-dots></canvas>
+      <div class="interactive-dots" aria-hidden="true" data-interactive-dots></div>
       <header class="topbar">
         <div class="topbar__time">
           <span class="topbar__live-dot" aria-hidden="true"></span>
           <span class="topbar__label">Time</span>
           <span data-elapsed-time>00:00</span>
         </div>
+        <button class="topbar__back-button" type="button" data-back-button>
+          Back
+        </button>
       </header>
 
-      <div class="top-dot" aria-hidden="true" data-top-dot></div>
+      <button
+        class="top-dot"
+        type="button"
+        aria-label="Interagovať s bodkou"
+        data-top-dot
+      ></button>
       <div class="welcome-copy" data-welcome-copy>
         Welcome to <span>Time.</span>
       </div>
@@ -25,7 +35,16 @@
         <br />
         Integer posuere erat a ante venenatis dapibus.
       </div>
+      <section class="dot-stat" aria-live="polite" data-dot-stat>
+        <div class="dot-stat__value" data-dot-stat-value>70%</div>
+        <div class="dot-stat__label" data-dot-stat-label>sem nejaky popis/informacia</div>
+      </section>
+      <div class="dot-hint" data-dot-hint>Click the dot in time</div>
     </main>
+    <div class="custom-cursor" aria-hidden="true" data-custom-cursor>
+      <div class="custom-cursor__ring"></div>
+      <div class="custom-cursor__arrow"></div>
+    </div>
 
     <script src="./script.js"></script>
   </body>
