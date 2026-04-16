@@ -2,6 +2,7 @@ const elapsedTime = document.querySelector("[data-elapsed-time]");
 const topDot = document.querySelector("[data-top-dot]");
 const backButton = document.querySelector("[data-back-button]");
 const welcomeCopy = document.querySelector("[data-welcome-copy]");
+const returnCopy = document.querySelector("[data-return-copy]");
 const welcomeNote = document.querySelector("[data-welcome-note]");
 const dotHint = document.querySelector("[data-dot-hint]");
 const dotStat = document.querySelector("[data-dot-stat]");
@@ -17,6 +18,8 @@ const DOTS_START_THRESHOLD = 0.84;
 const DOTS_RESET_THRESHOLD = 0.02;
 const ACTIVE_DOT_MESSAGE = "hold circle for more";
 const DOTS_FLOAT_START_BUFFER = 0;
+const DEFAULT_TOPBAR_BUTTON_LABEL = "Next";
+const RETURN_MODE_TOPBAR_BUTTON_LABEL = "To Start";
 
 const mutedColor =
   getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() ||
@@ -101,10 +104,14 @@ const state = {
   hintDelayStartTime: 0,
   dotsPaused: false,
   isDotActivated: false,
+  isReturnMode: false,
+  returnModeStartTime: 0,
   selectedDotIndex: null,
   pressedDotIndex: null,
   cursorX: window.innerWidth / 2,
   cursorY: window.innerHeight / 2,
+  introSettleTimeoutId: null,
+  canActivateTopDot: false,
 };
 
 function formatElapsedTime(totalSeconds) {
@@ -278,16 +285,36 @@ function syncCursor() {
   document.body.classList.toggle("cursor-active", state.isDotActivated);
 }
 
+function scheduleIntroSettle() {
+  if (state.introSettleTimeoutId !== null) {
+    window.clearTimeout(state.introSettleTimeoutId);
+  }
+
+  state.introSettleTimeoutId = window.setTimeout(() => {
+    topDot.classList.add("is-settled");
+    state.isSettled = true;
+    state.introSettleTimeoutId = null;
+    syncDotScrollState();
+  }, 500);
+}
+
 function syncDotScrollState() {
   const now = performance.now();
+  const returnRevealProgress = state.isReturnMode
+    ? Math.min(1, Math.max(0, (now - state.returnModeStartTime - 620) / 320))
+    : 0;
   const top = 50 + state.scrollProgress * 36;
   const scale = 1 - state.scrollProgress * 0.55;
   const revealProgress = Math.max(0, (state.scrollProgress - 0.78) / 0.16);
   const noteRevealProgress = Math.max(0, (state.scrollProgress - 0.95) / 0.04);
   const isShowingStat = state.isDotActivated && state.pressedDotIndex !== null;
-  const copyOpacity = isShowingStat ? 0 : Math.min(1, revealProgress);
-  const copyShift = 42 - revealProgress * 26;
-  const noteOpacity = isShowingStat ? 0 : Math.min(1, noteRevealProgress);
+  const copyOpacity = state.isReturnMode
+    ? returnRevealProgress
+    : isShowingStat
+      ? 0
+      : Math.min(1, revealProgress);
+  const copyShift = state.isReturnMode ? -114 : 42 - revealProgress * 26;
+  const noteOpacity = state.isReturnMode ? 0 : isShowingStat ? 0 : Math.min(1, noteRevealProgress);
   const noteShift = 92 - noteRevealProgress * 18;
   const isNearBottom = state.scrollProgress >= 0.992;
   const dotsAreFloating = getDotsFloatingProgress(now) > 0;
@@ -305,9 +332,10 @@ function syncDotScrollState() {
   const hintRevealProgress = state.isDotActivated ? 1 : Math.min(1, hintDelayProgress);
   const hintOpacity = Math.min(1, hintRevealProgress);
   const hintShift = 76 - hintRevealProgress * 8;
+  state.canActivateTopDot = !state.isReturnMode && !state.isDotActivated && hintOpacity > 0.72;
 
   topDot.style.top = `${top}%`;
-  topDot.style.setProperty("--dot-scale", scale.toFixed(3));
+  topDot.style.setProperty("--dot-scale", state.isReturnMode ? "1" : scale.toFixed(3));
   topDot.style.setProperty("--dot-active-scale", state.isDotActivated ? "0.78" : "1");
   welcomeCopy.style.setProperty("--copy-opacity", copyOpacity.toFixed(3));
   welcomeCopy.style.setProperty("--copy-shift", `${copyShift.toFixed(1)}px`);
@@ -318,12 +346,12 @@ function syncDotScrollState() {
   dotHint.style.setProperty("--hint-shift", `${hintShift.toFixed(1)}px`);
   dotHint.textContent = state.isDotActivated ? ACTIVE_DOT_MESSAGE : "Click the dot in time";
 
-  if (!state.dotsStarted && state.scrollProgress >= DOTS_START_THRESHOLD) {
+  if (!state.isReturnMode && !state.dotsStarted && state.scrollProgress >= DOTS_START_THRESHOLD) {
     state.dotsStarted = true;
     state.dotsStartTime = performance.now();
   }
 
-  if (state.dotsStarted && state.scrollProgress <= DOTS_RESET_THRESHOLD) {
+  if (!state.isReturnMode && state.dotsStarted && state.scrollProgress <= DOTS_RESET_THRESHOLD) {
     state.dotsStarted = false;
     state.dotsStartTime = 0;
     state.hintDelayStartTime = 0;
@@ -337,14 +365,20 @@ function syncDotScrollState() {
 
   topDot.classList.toggle(
     "is-pulsing",
-    state.dotsStarted && dotsAreFloating && hintOpacity > 0.12 && !state.isDotActivated,
+    state.isReturnMode || (state.dotsStarted && dotsAreFloating && hintOpacity > 0.12 && !state.isDotActivated),
   );
+  topDot.classList.toggle("is-disabled", !state.canActivateTopDot && !state.isReturnMode);
   topDot.classList.toggle("is-activated", state.isDotActivated);
+  topDot.classList.toggle("is-return-mode", state.isReturnMode);
   welcomeCopy.classList.toggle("is-muted", state.isDotActivated);
+  welcomeCopy.classList.toggle("is-return-copy", state.isReturnMode);
+  returnCopy.classList.toggle("is-visible", state.isReturnMode);
   welcomeNote.classList.toggle("is-hidden", state.isDotActivated);
-  welcomeCopy.innerHTML = "Welcome to <span>Time.</span>";
   dotHint.classList.toggle("is-active-message", state.isDotActivated);
-  backButton.classList.toggle("is-visible", state.isDotActivated);
+  backButton.classList.toggle("is-visible", state.isDotActivated || state.isReturnMode);
+  backButton.textContent = state.isReturnMode
+    ? RETURN_MODE_TOPBAR_BUTTON_LABEL
+    : DEFAULT_TOPBAR_BUTTON_LABEL;
   updateInteractiveDotsVisibility();
   updateStatDisplay();
   syncCursor();
@@ -367,6 +401,7 @@ function handleWheel(event) {
   if (!state.isSettled) return;
 
   event.preventDefault();
+  if (state.isReturnMode) return;
 
   const delta = event.deltaY * 0.00135;
   const limitedDelta = state.isDotActivated ? Math.max(0, delta) : delta;
@@ -374,7 +409,9 @@ function handleWheel(event) {
 }
 
 function activateDot() {
-  if (!state.dotsStarted || state.isDotActivated) return;
+  if (!state.dotsStarted || state.isDotActivated || state.isReturnMode || !state.canActivateTopDot) {
+    return;
+  }
 
   state.dotsPaused = true;
   state.isDotActivated = true;
@@ -384,19 +421,57 @@ function activateDot() {
   syncInteractiveDots();
 }
 
+function restartIntro() {
+  if (state.introSettleTimeoutId !== null) {
+    window.clearTimeout(state.introSettleTimeoutId);
+    state.introSettleTimeoutId = null;
+  }
+
+  topDot.classList.remove("is-settled");
+  state.isSettled = false;
+  state.dotsStarted = false;
+  state.dotsStartTime = 0;
+  state.hintDelayStartTime = 0;
+  state.dotsPaused = false;
+  state.isDotActivated = false;
+  state.isReturnMode = false;
+  state.returnModeStartTime = 0;
+  state.selectedDotIndex = null;
+  state.pressedDotIndex = null;
+  state.targetScrollProgress = 0;
+  state.scrollProgress = 0;
+  createBackgroundDots();
+  createInteractiveDots();
+  syncDotScrollState();
+  syncInteractiveDots();
+  scheduleIntroSettle();
+}
+
 function returnToStart() {
   state.dotsStarted = false;
   state.dotsStartTime = 0;
   state.hintDelayStartTime = 0;
   state.dotsPaused = false;
   state.isDotActivated = false;
+  state.isReturnMode = true;
+  state.returnModeStartTime = performance.now();
   state.selectedDotIndex = null;
   state.pressedDotIndex = null;
   state.targetScrollProgress = 0;
+  state.scrollProgress = 0;
   createBackgroundDots();
   createInteractiveDots();
   syncDotScrollState();
   syncInteractiveDots();
+}
+
+function handleTopbarButtonClick() {
+  if (state.isReturnMode) {
+    restartIntro();
+    return;
+  }
+
+  returnToStart();
 }
 
 function handleInteractiveDotPointerDown(event) {
@@ -435,18 +510,14 @@ createInteractiveDots();
 syncInteractiveDots();
 syncCursor();
 
-window.setTimeout(() => {
-  topDot.classList.add("is-settled");
-  state.isSettled = true;
-  syncDotScrollState();
-}, 500);
+scheduleIntroSettle();
 
 window.addEventListener("wheel", handleWheel, { passive: false });
 window.addEventListener("pointermove", handlePointerMove);
 window.addEventListener("pointerup", clearPressedDot);
 window.addEventListener("pointercancel", clearPressedDot);
 topDot.addEventListener("click", activateDot);
-backButton.addEventListener("click", returnToStart);
+backButton.addEventListener("click", handleTopbarButtonClick);
 interactiveDotsLayer.addEventListener("pointerdown", handleInteractiveDotPointerDown);
 window.addEventListener("resize", () => {
   resizeBackgroundDotsCanvas();
